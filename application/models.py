@@ -24,7 +24,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String, unique=True)
     password = db.Column(db.String)
     active = db.Column(db.Boolean)
-    fs_uniquifier = db.Column(db.String, unique=True, nullable=False)
+    fs_uniquifier = db.Column(db.String, unique=True)
 
     roles = db.relationship(
         "Role", secondary="roles_users", backref=db.backref("users", lazy="dynamic")
