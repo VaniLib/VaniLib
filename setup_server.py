@@ -87,3 +87,8 @@ with app.app_context():
         )
 
     print("Celery worker started successfully...\n")
+
+    pdf_path = os.path.join(os.path.dirname(__file__), "static", "uploaded", "pdf")
+    if not os.path.exists(pdf_path):
+        os.makedirs(pdf_path)
+        print("PDF directory created successfully...\n")
