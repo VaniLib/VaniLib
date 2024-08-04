@@ -18,7 +18,8 @@ export default ({
         },
         clear_content() {
             this.$refs.bookImage.value = null
-            this.new_book = { title: '', content: '', author: '', image: '', section: '', prologue: '' }
+            this.$refs.bookPdf.value = null
+            this.new_book = { title: '', content: '', author: '', section: '', prologue: '' }
         },
         get_all_books() {
             fetch('/api/book', {
@@ -31,6 +32,7 @@ export default ({
 
             const formData = new FormData();
             formData.append("image", this.$refs.bookImage.files[0]);
+            formData.append("pdf", this.$refs.bookPdf.files[0]);
             formData.append('title', this.new_book.title);
             formData.append('author', this.new_book.author);
             formData.append('content', this.new_book.content);
@@ -65,7 +67,7 @@ export default ({
     computed: { role() { return localStorage.getItem('role') } },
     components: { Book, BookDetailsModal },
     template: `
-    <div class="vh-100 px-3 mt-3 pb-5">        
+    <div class="px-3 mt-3 pb-5">        
         <div class="clearfix" style="margin-top: 10px">
             <div class="float-start">
                 <h3>All Books</h3>
@@ -103,9 +105,6 @@ export default ({
                                 <p class="mb-0 mt-2"/>
 
                                 <div class="col-lg-6">
-                                    <input type="file" ref="bookImage" class="form-control">
-                                </div>
-                                <div class="col-lg-6">
                                     <select v-model="new_book.section" class="form-select">
                                         <option value="" disabled selected>Select section</option>
                                         <option v-for="(section,i) in sections " :key="i" :value="section.section_id">{{section.section_name}}</option>
@@ -119,6 +118,17 @@ export default ({
                                 </div>
                                 <div class="col-lg-6">
                                     <textarea class="form-control" rows="3" maxlength="1000" v-model="new_book.content" placeholder="Book content"/>
+                                </div>
+
+                                <p class="mb-0 mt-2"/>
+
+                                <div class="col-lg-6">
+                                    <label class="mb-2"> <u> Book cover image </u> </label>
+                                    <input type="file" ref="bookImage" class="form-control" accept=".jpg,.jpeg,.png">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="mb-2"> <u> Book pdf </u> </label>
+                                    <input type="file" ref="bookPdf" class="form-control" accept=".pdf">
                                 </div>
                             </div>
                         </div>

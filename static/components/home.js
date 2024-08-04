@@ -16,7 +16,7 @@ export default ({
     created() { this.get_all_books() },
     components: { Book, BookDetailsModal },
     template: `
-    <div class="px-3 mt-3 pb-5 vh-100">
+    <div class="px-3 mt-3 pb-5">
         <div class="wall--bg" style="background: url('static/img/wall-paper2.jpg') center center; min-height:300px; text-align: center"">
             <h1 class="wall--heading">
                 <span class="bg-white">Welcome Home {{username}}!!</span>
@@ -26,7 +26,7 @@ export default ({
         <h3 class="mb-0 mt-4">All Latest Books</h3>
 
         <div class="row justify-content-left">
-            <div class="col-lg-2 mt-3" style="border-collapse: collapse;" v-for="(book,i) in book_list" :key="i">
+            <div class="col-lg-2 mt-3 mb-3" style="border-collapse: collapse;" v-for="(book,i) in book_list" :key="i">
                 <Book @show_detail="show_book_detail" :key="i" :book="book"/>            
             </div>   
             <BookDetailsModal ref="bookModal"/>

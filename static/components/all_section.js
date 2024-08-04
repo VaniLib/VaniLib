@@ -95,7 +95,7 @@ export default ({
     created() { this.get_all_sections() },
     computed: { role() { return localStorage.getItem('role') } },
     template: `
-        <div class="vh-100 px-3 mt-3 pb-5">
+        <div class="px-3 mt-3 pb-5">
             <div class="clearfix" style="margin-top: 10px">
                 <div class="float-start">
                     <h3>All Sections</h3>

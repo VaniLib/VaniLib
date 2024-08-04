@@ -18,7 +18,7 @@ export default ({
     created() { this.get_section_details() },
     components: { Book, BookDetailsModal },
     template: `
-        <div class="px-3 mt-3 pb-5 vh-100">
+        <div class="px-3 mt-3 pb-5">
             <div class="clearfix mt-3">
                 <div>
                     <h2> {{view_section.section_name}} </h2>   
@@ -36,7 +36,7 @@ export default ({
                 <div class="card text-danger border-danger mt-3 card-body" v-if="view_section.books.length==0">
                     <h5> No Books found in this section </h5>
                 </div>
-                <div class="col-lg-2 mt-3" style="border-collapse: collapse;" v-for="(book,i) in view_section.books" :key="i">
+                <div class="col-lg-2 mt-3 mb-3" style="border-collapse: collapse;" v-for="(book,i) in view_section.books" :key="i">
                     <Book @show_detail="show_book_details" :key="i" :book="book"/>            
                 </div>       
             </div>

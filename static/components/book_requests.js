@@ -19,7 +19,7 @@ export default ({
     },
     created() { this.get_pending_approvals() },
     template: `
-        <div class="vh-100 px-3 mt-3 pb-5">
+        <div class="px-3 mt-3 pb-5">
             <h3>Requests</h3>
             <table class="table table-bordered table-hover mt-3" style="text-align: center">
                 <thead>

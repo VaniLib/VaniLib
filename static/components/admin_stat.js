@@ -26,7 +26,7 @@ export default ({
         }
     },
     template: `
-    <div class="px-3 mt-3 pb-5 vh-100">
+    <div class="px-3 mt-3 pb-5">
         <h3>Stats</h3>
         <template>
             <div class="mt-5">

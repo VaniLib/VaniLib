@@ -39,6 +39,7 @@ class Book(db.Model):
     title = db.Column(db.String)
     content = db.Column(db.Text)
     image = db.Column(db.String)
+    pdf = db.Column(db.String)
 
     section_id = db.Column(db.Integer, db.ForeignKey("sections.section_id"))
     section = db.relationship("Section", backref="books")
@@ -77,6 +78,17 @@ class Book(db.Model):
             book_id=self.book_id,
             is_approved=True,
             is_returned=False,
+            is_revoked=False,
+            user_id=current_user.id,
+        ).all()
+        return True if len(rqs) > 0 else False
+
+    @property
+    def is_completed_by_me(self):
+        rqs = BookRequest.query.filter_by(
+            book_id=self.book_id,
+            is_approved=True,
+            is_returned=True,
             is_revoked=False,
             user_id=current_user.id,
         ).all()

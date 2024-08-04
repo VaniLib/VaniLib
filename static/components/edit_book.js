@@ -1,6 +1,6 @@
 export default ({
     data: () => ({
-        edit_book: { title: '', content: '', author: '', image: '', section_id: '', prologue: '' },
+        edit_book: { title: '', content: '', author: '', section_id: '', prologue: '' },
         sections: []
     }),
     methods: {
@@ -21,6 +21,7 @@ export default ({
 
             const formData = new FormData();
             formData.append("image", this.$refs.bookImage.files[0]);
+            formData.append("pdf", this.$refs.bookPdf.files[0]);
             formData.append('title', this.edit_book.title);
             formData.append('author', this.edit_book.author);
             formData.append('content', this.edit_book.content);
@@ -35,7 +36,7 @@ export default ({
                 if (res.ok) {
                     this.get_book_details()
                     alert("Updated Book Information Successfully")
-                    this.edit_book = { title: '', content: '', author: '', image: '', section_id: '', prologue: '' }
+                    this.edit_book = { title: '', content: '', author: '', section_id: '', prologue: '' }
                     this.$router.push({ path: "/books" })
                 } else {
                     alert((await res.json()).message)
@@ -50,7 +51,6 @@ export default ({
         this.get_all_sections()
     },
     template: `
-    <div class="vh-100">
         <div class="px-3 mt-3 pb-5">
             <h3>Edit Book Info</h3>
             <hr>
@@ -70,12 +70,6 @@ export default ({
 
                 <p class="mb-0 mt-3"/>
 
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label class="form-label">Book cover</label>
-                        <input type="file" ref="bookImage" class="form-control">
-                    </div>
-                </div>
                 <div class="col-lg-6">
                     <div class="form-group">
                         <label class="form-label">Select section</label>
@@ -99,11 +93,26 @@ export default ({
                         <textarea class="form-control" rows="3" maxlength="1000" v-model="edit_book.content"/>
                     </div>
                 </div>
+
+                <p class="mb-0 mt-3"/>
+
+                <div class="col-lg-6">
+                    <div class="form-group">
+                        <label class="form-label">Book cover</label>
+                        <input type="file" ref="bookImage" class="form-control" accept=".jpg,.jpeg,.png">
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="form-group">
+                        <label class="form-label">Book pdf</label>
+                        <input type="file" ref="bookPdf" class="form-control" accept=".pdf">
+                    </div>
+                </div>
             </div>
             
             <div class="text-end mt-3">
                 <button class="btn btn-outline-success" @click="update_book">Update book</button>
             </div>
-        </div>
-    </div>`
+        </div>`
 })

@@ -5,9 +5,10 @@ matplotlib.use("Agg")
 import base64
 import uuid
 import matplotlib.pyplot as plt
+import os
 
 from matplotlib.ticker import MaxNLocator
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from flask import request, jsonify
 from flask_restful import Resource, Api, reqparse, fields, marshal
@@ -17,6 +18,7 @@ from werkzeug.utils import secure_filename
 
 
 from application.models import (
+    User,
     Book,
     db,
     Section,
@@ -62,8 +64,10 @@ section_marshal_fields = {
             "title": fields.String,
             "content": fields.String,
             "image": fields.String,
+            "pdf": fields.String,
             "is_pending_for_me": fields.Boolean,
             "is_approved_for_me": fields.Boolean,
+            "is_completed_by_me": fields.Boolean,
             "num_of_book_pending_for_me": fields.Integer,
         }
     ),
@@ -77,9 +81,11 @@ book_marshal_fields = {
     "title": fields.String,
     "content": fields.String,
     "image": fields.String,
+    "pdf": fields.String,
     "section": fields.Nested(section_marshal_fields),
     "is_pending_for_me": fields.Boolean,
     "is_approved_for_me": fields.Boolean,
+    "is_completed_by_me": fields.Boolean,
     "wrote_review": fields.Boolean,
     "request_id": fields.Raw,
     "requests": fields.Nested(
@@ -115,6 +121,13 @@ book_requests_marshal_field = {
 }
 
 
+user_marshal_field = {
+    "id": fields.Integer,
+    "name": fields.String,
+    "roles": {"name": fields.String},
+}
+
+
 class BookHandler(Resource):
 
     @auth_required("token")
@@ -131,7 +144,15 @@ class BookHandler(Resource):
     def delete(self, book_id):
         Feedback.query.filter_by(book_id=book_id).delete()
         BookRequest.query.filter_by(book_id=book_id).delete()
-        Book.query.filter_by(book_id=book_id).delete()
+
+        book_obj = Book.query.filter_by(book_id=book_id)
+        book = book_obj.all()[0]
+        if book.image != "no_image_found.png":
+            os.remove("static/uploaded/image/" + book.image)
+        if len(book.pdf) > 0:
+            os.remove("static/uploaded/pdf/" + book.pdf)
+        book_obj.delete()
+
         db.session.commit()
 
     def parse_input(self):
@@ -172,8 +193,19 @@ class BookHandler(Resource):
         image_filename = book.image
         if "image" in request.files and request.files["image"]:
             file = request.files["image"]
-            image_filename = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
-            file.save("static/uploaded/" + image_filename)
+            if "no_image_found.png" in image_filename:
+                image_filename = (
+                    str(uuid.uuid4()) + "_" + secure_filename(file.filename)
+                )
+            file.save("static/uploaded/image/" + image_filename)
+            file.close()
+
+        pdf_filename = book.pdf
+        if "pdf" in request.files and request.files["pdf"]:
+            file = request.files["pdf"]
+            if len(pdf_filename) == 0:
+                pdf_filename = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
+            file.save("static/uploaded/pdf/" + pdf_filename)
             file.close()
 
         book.author = args.get("author")
@@ -182,6 +214,7 @@ class BookHandler(Resource):
         book.prologue = args.get("prologue")
         book.section_id = args.get("section")
         book.image = image_filename
+        book.pdf = pdf_filename
         db.session.commit()
 
     @auth_required("token")
@@ -198,10 +231,17 @@ class BookHandler(Resource):
         if "image" in request.files and request.files["image"]:
             file = request.files["image"]
             image_file = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
-            file.save("static/uploaded/" + image_file)
+            file.save("static/uploaded/image/" + image_file)
             file.close()
         else:
             image_file = "no_image_found.png"
+
+        pdf_file = ""
+        if "pdf" in request.files and request.files["pdf"]:
+            file = request.files["pdf"]
+            pdf_file = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
+            file.save("static/uploaded/pdf/" + pdf_file)
+            file.close()
 
         db.session.add(
             Book(
@@ -211,6 +251,7 @@ class BookHandler(Resource):
                 prologue=args.get("prologue"),
                 section_id=args.get("section"),
                 image=image_file,
+                pdf=pdf_file,
             )
         )
         db.session.commit()
@@ -346,6 +387,50 @@ class BookRequests(Resource):
         return jsonify({"pending": pending, "approved": approved})
 
 
+class UserResource(Resource):
+    @auth_required("token")
+    def get(self, user_id=None):
+        if user_id is None:
+            return marshal(
+                [user for user in User.query.all() if "member" in user.roles],
+                user_marshal_field,
+            )
+        else:
+            requested, approved, completed = set(), set(), set()
+            for request in BookRequest.query.filter_by(user_id=user_id).all():
+                appr, rej, ret, rev = (
+                    request.is_approved,
+                    request.is_rejected,
+                    request.is_returned,
+                    request.is_revoked,
+                )
+                if not rej and not rev:
+                    if True not in [appr, ret]:
+                        requested.add(request.book.book_id)
+                    elif appr:
+                        if ret:
+                            completed.add(request.book.book_id)
+                        else:
+                            approved.add(request.book.book_id)
+
+            return jsonify(
+                {
+                    "requested": marshal(
+                        Book.query.filter(Book.book_id.in_(requested)).all(),
+                        book_marshal_fields,
+                    ),
+                    "approved": marshal(
+                        Book.query.filter(Book.book_id.in_(approved)).all(),
+                        book_marshal_fields,
+                    ),
+                    "completed": marshal(
+                        Book.query.filter(Book.book_id.in_(completed)).all(),
+                        book_marshal_fields,
+                    ),
+                }
+            )
+
+
 class Search(Resource):
     @auth_required("token")
     def post(self):
@@ -445,6 +530,8 @@ class MyRequests(Resource):
 api.add_resource(Search, "/search")
 api.add_resource(MyRequests, "/my_requests")
 api.add_resource(AddReview, "/review/<int:book_id>")
+
+api.add_resource(UserResource, "/users", "/users/<int:user_id>")
 
 # Librarian report route
 api.add_resource(LibrarianReport, "/lib/report")

@@ -72,7 +72,7 @@ export default ({
             if (this.book_info.hasOwnProperty('image')) {
                 image_path = "static/img/no_image_found.png"
                 if (this.book_info.image != "") {
-                    image_path = "static/uploaded/" + this.book_info.image
+                    image_path = "static/uploaded/image/" + this.book_info.image
                 }
             }
             return image_path

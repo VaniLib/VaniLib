@@ -13,8 +13,7 @@ new Vue({
     },
   },
   template: `
-    <div class="bg-dark">
-      <div style="background-color: #faf8f5">
+    <div>
         <NavBar :key='has_changed'/>
         <router-view/>
       </div>

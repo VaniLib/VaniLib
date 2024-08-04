@@ -47,8 +47,16 @@ export default ({
                                     <router-link to="/approved_books" tag="a" class="nav-link">Approved Books</router-link>
                                 </li>
 
+                                <li class="nav-item" v-if="role=='member'">
+                                    <router-link to="/completed_books" tag="a" class="nav-link">Completed Books</router-link>
+                                </li>
+
                                 <li class="nav-item" v-if="role=='librarian'">
                                     <router-link to="/requests" tag="a" class="nav-link">User Requests</router-link>
+                                </li>
+
+                                <li class="nav-item" v-if="role=='librarian'">
+                                    <router-link to="/list_users" tag="a" class="nav-link">List Of Users</router-link>
                                 </li>
                                 
                                 <li class="nav-item" v-if="role=='librarian'">

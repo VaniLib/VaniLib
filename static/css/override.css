@@ -2,6 +2,12 @@
   font-family: "Platypi", serif;
 }
 
+body {
+  background-color: #faf8f5;
+  background-size: cover;
+}
+
+
 .container {
   background-color: rgb(252, 255, 218);
 }
@@ -44,4 +50,13 @@
   border-radius: 0.5rem;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
   animation: login 0.5s forwards cubic-bezier(0.2, 2, 0.4, 1);
+}
+
+.card-group.card-group-scroll {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.card-group.card-group-scroll>.card {
+  flex-basis: 35%;
 }

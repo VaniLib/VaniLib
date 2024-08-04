@@ -14,7 +14,7 @@ export default ({
             if (this.book.image == "") {
                 image_url = "static/img/no_image_found.png";
             } else {
-                image_url = "static/uploaded/" + this.book.image;
+                image_url = "static/uploaded/image/" + this.book.image;
             }
             return "height: 220px; width: 150px; background: url('" + image_url + "') center; background-size: cover;";
         }
