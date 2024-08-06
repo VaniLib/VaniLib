@@ -6,11 +6,13 @@ import base64
 import uuid
 import matplotlib.pyplot as plt
 import os
+import io
+import csv
 
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 from io import BytesIO
-from flask import request, jsonify
+from flask import request, jsonify, Response
 from flask_restful import Resource, Api, reqparse, fields, marshal
 from flask_security import current_user, auth_required, roles_required
 from sqlalchemy import text
@@ -465,9 +467,20 @@ class AddReview(Resource):
         db.session.commit()
 
 
+def get_plt_bytes():
+    buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    bytes = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
+    return bytes
+
+
 class LibrarianReport(Resource):
-    def get(self):
-        section_counts, issued_counts = {}, {}
+
+    def generate_plts(self):
+        section_counts, issued_counts, date_count = {}, {}, {}
         for book in Book.query.all():
             section_name = book.section.section_name
             section_counts[section_name] = section_counts.get(section_name, 0) + 1
@@ -479,6 +492,10 @@ class LibrarianReport(Resource):
                 is_revoked=False,
             ).count()
 
+        for u_entry in DailyVisit.query.all():
+            date = str(u_entry.date)
+            date_count[date] = date_count.get(date, 0) + 1
+
         ax = plt.figure().gca()
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.bar(section_counts.keys(), section_counts.values(), color="green")
@@ -486,13 +503,7 @@ class LibrarianReport(Resource):
         plt.xlabel("Section")
         plt.ylabel("Number of Books")
         plt.xticks(rotation=90)
-
-        buffer = BytesIO()
-        plt.tight_layout()
-        plt.savefig(buffer, format="png")
-        buffer.seek(0)
-        plot_data_section = base64.b64encode(buffer.getvalue()).decode()
-        plt.close()
+        plot_data_section = get_plt_bytes()
 
         ax = plt.figure().gca()
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
@@ -501,20 +512,57 @@ class LibrarianReport(Resource):
         plt.ylabel("Number of Issued Requests")
         plt.title("Number of Issued Requests by Book")
         plt.xticks(rotation=90)
+        plot_data_book = get_plt_bytes()
 
-        buffer = BytesIO()
-        plt.tight_layout()
-        plt.savefig(buffer, format="png")
-        buffer.seek(0)
-        plot_data_book = base64.b64encode(buffer.getvalue()).decode()
-        plt.close()
+        ax = plt.figure().gca()
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        plt.bar(date_count.keys(), date_count.values(), color="blue")
+        plt.title("Number of user visits per day")
+        plt.xlabel("Date")
+        plt.ylabel("Number of User Visits")
+        plt.xticks(rotation=90)
+        plot_data_visit = get_plt_bytes()
 
-        return jsonify(
-            {
-                "plot_data_section": plot_data_section,
-                "plot_data_book": plot_data_book,
-            }
-        )
+        return {
+            "plot_data_section": plot_data_section,
+            "plot_data_book": plot_data_book,
+            "plot_data_visit": plot_data_visit,
+        }
+
+    def get(self, generate_pdf=None):
+        if generate_pdf is None:
+            return self.generate_plts()
+        else:
+            import time
+            time.sleep(10)
+            csv_output = io.StringIO()
+
+            writer = csv.writer(csv_output)
+            writer.writerow(
+                [
+                    "Book Name",
+                    "User Name",
+                    "Issued Date",
+                    "Returned Date",
+                    "IsApproved",
+                    "IsReturned",
+                ]
+            )
+            for req in marshal(BookRequest.query.all(), book_requests_marshal_field):
+                writer.writerow(
+                    [
+                        req["book"]["title"].upper(),
+                        req["user"]["name"].upper(),
+                        req["issue_date"],
+                        req["return_date"],
+                        req["is_approved"],
+                        req["is_returned"],
+                    ]
+                )
+
+            return Response(
+                csv_output.getvalue().encode("utf-8"), content_type="text/csv"
+            )
 
 
 class MyRequests(Resource):
@@ -534,7 +582,7 @@ api.add_resource(AddReview, "/review/<int:book_id>")
 api.add_resource(UserResource, "/users", "/users/<int:user_id>")
 
 # Librarian report route
-api.add_resource(LibrarianReport, "/lib/report")
+api.add_resource(LibrarianReport, "/lib/report", "/lib/report/<int:generate_pdf>")
 
 # Book request handling routes
 api.add_resource(RequestBooks, "/request_book/<int:book_id>")
